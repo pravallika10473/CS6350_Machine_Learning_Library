@@ -1,0 +1,1 @@
+This is a machine learning library developed by Pravallika Abbineni for CS6350 at the University of Utah
