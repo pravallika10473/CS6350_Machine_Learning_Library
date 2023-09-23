@@ -173,7 +173,7 @@ class DecisionTreeClassifier:
 # Create and train the decision tree with varying depth and criteria
 results = {'information_gain': [], 'majority_error': [], 'gini': []}
 
-for max_depth in range(1, 6):
+for max_depth in range(1, 6): # change the value in place of 6 to vary the depth of the tree
     for criterion in ['information_gain', 'majority_error', 'gini']:
         model = DecisionTreeClassifier(max_depth=max_depth)
         model.fit(X_train.values, y_train.values)
