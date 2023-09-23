@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 echo "Training and Test errors for car dataset"
 python3 decissiontreecar.py
