@@ -176,8 +176,7 @@ for max_depth in range(1, 17):  # Vary the maximum tree depth from 1 to 16
         results[criterion].append((1 - train_acc, 1 - test_acc))
 
 # Print results
-print('{:13} {:>12} {:>4}'.format('Criterion', 'Train', 'Test'))
+print('Criterion      Train   Test')
 for criterion, errors in results.items():
-    print('{:20} {:.3f} {:.3f}'.format(criterion, np.mean([error[0] for error in errors]), np.mean([error[1] for error in errors])))
-
+    print(f'{criterion: <15} {errors[-1][0]:.3f} {errors[-1][1]:.3f}')
 
