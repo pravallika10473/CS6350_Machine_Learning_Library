@@ -185,7 +185,7 @@ for max_depth in range(1, 6): # change the value in place of 6 to vary the depth
         results[criterion].append((1 - train_acc, 1 - test_acc))
 
 # Print results
-print('{:13} {:>12} {:>4}'.format('Criterion', 'Train', 'Test'))
+print('Criterion      Train   Test')
 for criterion, errors in results.items():
-    print('{:20} {:.3f} {:.3f}'.format(criterion, *errors[-1]))
+    print(f'{criterion: <15} {errors[-1][0]:.3f} {errors[-1][1]:.3f}')
 
