@@ -1,4 +1,4 @@
-This implements decission tree for the datasets car and bank.
+This implements decision tree for the datasets car and bank.
 To run the Decision Tree on car dataset:
 python3 decissiontreecar.py
 
