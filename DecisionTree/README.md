@@ -1,4 +1,4 @@
-#Decision Tree
+# Decision Tree
 This implements a decision tree for the datasets car and bank.
 #Commands
 To run the Decision Tree on car dataset:
