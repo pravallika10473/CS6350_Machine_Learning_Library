@@ -1,6 +1,6 @@
 # Decision Tree
 This implements a decision tree for the datasets car and bank.
-#Commands
+# Commands
 To run the Decision Tree on car dataset:
 python3 decissiontreecar.py
 
