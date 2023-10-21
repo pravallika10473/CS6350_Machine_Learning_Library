@@ -1,4 +1,4 @@
-from baggedtree1 import bagged_trees_classifier, DecisionTreeClassifier
+from baggedtree import bagged_trees_classifier, DecisionTreeClassifier
 import numpy as np
 from sklearn.metrics import mean_squared_error
 import pandas as pd
@@ -33,69 +33,65 @@ test_df = pd.read_csv(test_file, names=column_headers, dtype=dtype_dict)
 X_test = test_df.drop('y', axis=1).values
 y_test = test_df['y'].apply(lambda x: 1 if x == 'yes' else 0).values.astype(float)
 
-# Initialize variables to store results
-num_experiments = 1
-num_samples = 1
-num_trees_bagged = 1
-num_trees_single = 1
 
-bias_single_tree = 0
-variance_single_tree = 0
-squared_error_single_tree = 0
+# Function to compute bias and variance
+def compute_bias_variance(predictions, ground_truth):
+    # Compute bias (average prediction - ground-truth label)
+    bias = np.mean(predictions) - ground_truth
 
-bias_bagged_trees = 0
-variance_bagged_trees = 0
-squared_error_bagged_trees = 0
+    # Compute variance
+    variance = np.var(predictions)
 
-for _ in range(num_experiments):
-    # Step 1: Sample 1,000 examples uniformly without replacement
-    sample_indices = np.random.choice(len(X_train), num_samples, replace=False)
-    X_sample = X_train[sample_indices]
-    y_sample = y_train[sample_indices]
+    return bias, variance
 
-    # Step 2: Train a Bagged Trees ensemble with 100 trees
-    bagged_trees = BaggedTrees(n_estimators=num_trees_bagged)
-    bagged_trees.fit(X_sample, y_sample)
+# Function to perform the experiment
+# Function to perform the experiment
+# Function to perform the experiment
+def run_experiment(X_train, y_train, X_test, y_test, num_iterations=100, num_bagged_trees=500):
+    single_tree_biases = []
+    single_tree_variances = []
+    bagged_tree_biases = []
+    bagged_tree_variances = []
 
-    # Train a single decision tree for comparison
-    single_tree = DecisionTree(max_depth=None)
-    single_tree.fit(X_sample, y_sample)
+    for _ in range(num_iterations):
+        # Step 1: Sample 1,000 examples uniformly without replacement from the training dataset
+        n_samples = X_train.shape[0]
+        sample_indices = np.random.choice(n_samples, size=1000, replace=False)
+        sampled_X_train, sampled_y_train = X_train[sample_indices], y_train[sample_indices]
 
-    # Predictions for single tree
-    y_single_tree_predictions = []
-    for x in X_test:
-        prediction = single_tree.predict([x])
-        y_single_tree_predictions.append(prediction)
 
-    # Predictions for Bagged Trees
-    y_bagged_trees_predictions = bagged_trees.predict(X_test)
+        # Step 2: Run bagged trees learning algorithm based on the 1,000 training examples and learn 500 trees
+        bagged_trees_classifier = BaggedTreesClassifier(num_bagged_trees)
+        bagged_trees_classifier.fit(sampled_X_train, sampled_y_train)
 
-    # Calculate bias for single tree
-    bias_single_tree += np.mean(np.square(y_single_tree_predictions - y_test))
+        # Step 3: Compute bias and variance for single trees and bagged trees
+        # Single trees
+        single_tree_predictions = np.array([tree.predict(X_test) for tree in bagged_trees_classifier.trees])
+        avg_single_tree_predictions = np.mean(single_tree_predictions, axis=0)
+        single_tree_bias, single_tree_variance = compute_bias_variance(avg_single_tree_predictions, y_test)
+        single_tree_biases.append(single_tree_bias)
+        single_tree_variances.append(single_tree_variance)
 
-    # Calculate variance for single tree
-    variance_single_tree += np.var(y_single_tree_predictions)
+        # Bagged trees
+        bagged_tree_predictions = bagged_trees_classifier.predict(X_test)
+        bagged_tree_bias, bagged_tree_variance = compute_bias_variance(bagged_tree_predictions, y_test)
+        bagged_tree_biases.append(bagged_tree_bias)
+        bagged_tree_variances.append(bagged_tree_variance)
 
-    # Calculate bias for Bagged Trees
-    bias_bagged_trees += np.mean(np.square(y_bagged_trees_predictions - y_test))
+    # Calculate average bias, variance, and general squared error
+    avg_single_tree_bias = np.mean(single_tree_biases)
+    avg_single_tree_variance = np.mean(single_tree_variances)
+    avg_bagged_tree_bias = np.mean(bagged_tree_biases)
+    avg_bagged_tree_variance = np.mean(bagged_tree_variances)
 
-    # Calculate variance for Bagged Trees
-    variance_bagged_trees += np.var(y_bagged_trees_predictions)
+    return avg_single_tree_bias, avg_single_tree_variance, avg_bagged_tree_bias, avg_bagged_tree_variance
 
-# Calculate squared error for both single tree and Bagged Trees
-squared_error_single_tree = bias_single_tree + variance_single_tree
-squared_error_bagged_trees = bias_bagged_trees + variance_bagged_trees
-
-# Calculate the average bias, variance, and squared error
-bias_single_tree /= num_experiments
-variance_single_tree /= num_experiments
-bias_bagged_trees /= num_experiments
-variance_bagged_trees /= num_experiments
+# Run the experiment
+avg_single_tree_bias, avg_single_tree_variance, avg_bagged_tree_bias, avg_bagged_tree_variance = run_experiment(
+    X_train, y_train, X_test, y_test)
 
 # Print the results
-print("Single Tree - Bias:", bias_single_tree)
-print("Single Tree - Variance:", variance_single_tree)
-print("Single Tree - Squared Error:", squared_error_single_tree)
-print("Bagged Trees - Bias:", bias_bagged_trees)
-print("Bagged Trees - Variance:", variance_bagged_trees)
-print("Bagged Trees - Squared Error:", squared_error_bagged_trees)
+print("Average bias for single decision tree:", avg_single_tree_bias)
+print("Average variance for single decision tree:", avg_single_tree_variance)
+print("Average bias for bagged trees:", avg_bagged_tree_bias)
+print("Average variance for bagged trees:", avg_bagged_tree_variance)
