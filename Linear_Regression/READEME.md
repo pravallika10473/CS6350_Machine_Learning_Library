@@ -1,3 +1,6 @@
+# Linear Regression
+This implements batch_gradient_descent, stochastic_gradient_descent, optimal weight
+# Commands
 
 python3 batch_gradient_descent.py
 
