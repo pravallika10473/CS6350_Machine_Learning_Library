@@ -18,7 +18,7 @@ X_test = np.c_[np.ones(X_test.shape[0]), X_test]
 
 # Initialize parameters
 w = np.zeros(X_train.shape[1])  # Initialize weight vector
-learning_rate = 0.001  # Initial learning rate
+learning_rate = 0.01  # Initial learning rate
 max_iterations = 10000
 cost_history = []
 

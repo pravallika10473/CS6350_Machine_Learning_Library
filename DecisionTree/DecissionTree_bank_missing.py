@@ -4,12 +4,12 @@ from sklearn.metrics import accuracy_score
 from collections import Counter
 
 column_headers = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome', 'label']
-df1=pd.read_csv("datasets/train.csv",names=column_headers,na_values='unknown')
+df1=pd.read_csv("datasets/bank/train.csv",names=column_headers,na_values='unknown')
 df1 = df1.fillna(df1.mode().iloc[0])
 X_train = df1.drop('label', axis=1)
 y_train = df1['label']
 
-df2 = pd.read_csv("datasets/test.csv",names=column_headers,na_values='unknown')
+df2 = pd.read_csv("datasets/bank/test.csv",names=column_headers,na_values='unknown')
 X_test = df2.drop('label', axis=1)
 y_test = df2['label']
 
@@ -165,7 +165,7 @@ class DecisionTreeClassifier:
 # Create and train the decision tree with varying depth and criteria
 results = {'information_gain': [], 'majority_error': [], 'gini': []}
 
-for max_depth in range(1, 16):  # Vary the maximum tree depth from 1 to 16
+for max_depth in range(1, 17):  # Vary the maximum tree depth from 1 to 16
     for criterion in ['information_gain', 'majority_error', 'gini']:
         model = DecisionTreeClassifier(max_depth=max_depth)
         model.fit(X_train.values, y_train.values)

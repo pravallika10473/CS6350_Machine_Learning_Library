@@ -13,11 +13,11 @@ from sklearn.metrics import accuracy_score
 from collections import Counter
 
 column_headers = ['buying', 'maint', 'doors', 'persons', 'lug_boot', 'safety', 'label']
-df1=pd.read_csv("datasets/train.csv",names=column_headers)
+df1=pd.read_csv("datasets/car/train.csv",names=column_headers)
 X_train = df1.drop('label', axis=1)
 y_train = df1['label']
 
-df2 = pd.read_csv("datasets/test.csv",names=column_headers)
+df2 = pd.read_csv("datasets/car/test.csv",names=column_headers)
 X_test = df2.drop('label', axis=1)
 y_test = df2['label']
 
@@ -173,7 +173,7 @@ class DecisionTreeClassifier:
 # Create and train the decision tree with varying depth and criteria
 results = {'information_gain': [], 'majority_error': [], 'gini': []}
 
-for max_depth in range(1, 6): # change the value in place of 6 to vary the depth of the tree
+for max_depth in range(1, 2): # change the value in place of 7 to vary the depth of the tree
     for criterion in ['information_gain', 'majority_error', 'gini']:
         model = DecisionTreeClassifier(max_depth=max_depth)
         model.fit(X_train.values, y_train.values)
@@ -188,4 +188,6 @@ for max_depth in range(1, 6): # change the value in place of 6 to vary the depth
 print('Criterion      Train   Test')
 for criterion, errors in results.items():
     print(f'{criterion: <15} {errors[-1][0]:.3f} {errors[-1][1]:.3f}')
+
+
 

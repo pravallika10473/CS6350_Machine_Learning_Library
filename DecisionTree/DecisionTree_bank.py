@@ -4,13 +4,19 @@ from sklearn.metrics import accuracy_score
 from collections import Counter
 
 column_headers = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 'month', 'duration', 'campaign', 'pdays', 'previous', 'poutcome', 'label']
-df1=pd.read_csv("datasets/train.csv",names=column_headers)
+df1 = pd.read_csv("datasets/bank/train.csv", names=column_headers)
 X_train = df1.drop('label', axis=1)
 y_train = df1['label']
 
-df2 = pd.read_csv("datasets/test.csv",names=column_headers)
+df2 = pd.read_csv("datasets/bank/test.csv", names=column_headers)
 X_test = df2.drop('label', axis=1)
 y_test = df2['label']
+
+# Add a threshold dictionary for numerical attributes
+thresholds = {'age': np.median(X_train['age']), 'balance': np.median(X_train['balance']),
+              'day': np.median(X_train['day']), 'duration': np.median(X_train['duration']),
+              'campaign': np.median(X_train['campaign']), 'pdays': np.median(X_train['pdays']),
+              'previous': np.median(X_train['previous'])}
 
 class TreeNode:
     def __init__(self, attribute, attributeName, is_leaf, label, depth, info_gain, entropy_parent_attr, parent_attr_val):
@@ -33,9 +39,15 @@ class TreeNode:
     def predict(self, x):
         if self.is_leaf:
             return self.label
-        current_val = x[self.attribute]
-        if current_val not in self.children.keys():
+
+        current_val = x.iloc[self.attribute]  # Use .iloc to access DataFrame columns by index
+
+        if self._is_numerical(self.attribute):
+            current_val = self._compare_threshold(x, self.attribute)
+
+        if current_val not in self.children:
             return self.label
+
         return self.children[current_val].predict(x)
 
     def print_node(self, space=""):
@@ -47,6 +59,15 @@ class TreeNode:
         print(f"{space}Label: {self.label}")
         for child in self.children.values():
             child.print_node(space + "\t")
+
+    def _is_numerical(self, attribute):
+        return attribute in thresholds
+
+    def _compare_threshold(self, x, attribute):
+        if x.iloc[attribute] >= thresholds[attribute]:
+            return ">= " + str(thresholds[attribute])
+        else:
+            return "< " + str(thresholds[attribute])
 
     def _majority_error(self, X, y, attribute):
         values = set(X[attribute])
@@ -61,7 +82,6 @@ class TreeNode:
             p = (X[attribute] == value).mean()
             gini -= p**2
         return gini
-
 
 class DecisionTreeClassifier:
     def __init__(self, max_depth=np.inf):
@@ -100,10 +120,10 @@ class DecisionTreeClassifier:
                         parent_info["max_info_gain"], parent_info["attribute_list[max_attribute]"],
                         parent_info["value"])
 
-        attribute_values = np.unique(X[:, attribute_list[max_attribute]])
+        attribute_values = np.unique(X.iloc[:, attribute_list[max_attribute]])  # Use .iloc to access DataFrame columns by index
         new_attribute_list = np.delete(attribute_list, max_attribute)
         for value in attribute_values:
-            indices = np.where(X[:, attribute_list[max_attribute]] == value)[0]
+            indices = np.where(X.iloc[:, attribute_list[max_attribute]] == value)[0]
             if len(indices) == 0:
                 root.add_child(TreeNode(None, None, True, vals[np.argmax(counts)], current_depth + 1,
                                         max_info_gain, attribute_list[max_attribute], value), current_depth)
@@ -113,7 +133,7 @@ class DecisionTreeClassifier:
                     "attribute_list[max_attribute]": entropy,
                     "value": value
                 }
-                root.add_child(self.build_tree(X[indices], Y[indices], attribute_names, new_attribute_list,
+                root.add_child(self.build_tree(X.iloc[indices], Y.iloc[indices], attribute_names, new_attribute_list,
                                                current_depth + 1, parent_info), value)
         return root
 
@@ -130,23 +150,23 @@ class DecisionTreeClassifier:
         _, counts = np.unique(Y, return_counts=True)
         entropy_attribute = self.calculate_entropy(counts)
         entropy_parent = 0
-        distinct_attr_values = list(set(X[:, attribute]))
+        distinct_attr_values = list(set(X.iloc[:, attribute]))  # Use .iloc to access DataFrame columns by index
         for val in distinct_attr_values:
-            indices = np.where(X[:, attribute] == val)[0]
-            _, counts = np.unique(Y[indices], return_counts=True)
+            indices = np.where(X.iloc[:, attribute] == val)[0]
+            _, counts = np.unique(Y.iloc[indices], return_counts=True)
             entr = self.calculate_entropy(counts)
             entropy_parent += (len(indices) / len(Y)) * entr
         info_gain = entropy_attribute - entropy_parent
         return info_gain, entropy_attribute, entropy_parent
 
     def fit(self, X, Y):
-        attribute_names = list(range(X.shape[1]))  # Assume attributes are indexed
+        attribute_names = list(range(X.shape[1]) if isinstance(X, pd.DataFrame) else range(X.shape[1]))  # Assume attributes are indexed
         attribute_list = np.arange(X.shape[1])
         self.root = self.build_tree(X, Y, attribute_names, attribute_list, 0)
 
     def predict(self, X):
         predictions = []
-        for x in X:
+        for _, x in X.iterrows():
             predictions.append(self.root.predict(x))
         return predictions
 
@@ -161,15 +181,14 @@ class DecisionTreeClassifier:
     def print_tree(self):
         self.root.print_node("")
 
-# Create and train the decision tree with varying depth and criteria
 results = {'information_gain': [], 'majority_error': [], 'gini': []}
 
-for max_depth in range(1, 17):  # Vary the maximum tree depth from 1 to 16
+for max_depth in range(1, 12):
     for criterion in ['information_gain', 'majority_error', 'gini']:
         model = DecisionTreeClassifier(max_depth=max_depth)
-        model.fit(X_train.values, y_train.values)
-        y_train_pred = model.predict(X_train.values)
-        y_test_pred = model.predict(X_test.values)
+        model.fit(X_train, y_train)
+        y_train_pred = model.predict(X_train)
+        y_test_pred = model.predict(X_test)
 
         train_acc = accuracy_score(y_train, y_train_pred)
         test_acc = accuracy_score(y_test, y_test_pred)
@@ -179,4 +198,3 @@ for max_depth in range(1, 17):  # Vary the maximum tree depth from 1 to 16
 print('Criterion      Train   Test')
 for criterion, errors in results.items():
     print(f'{criterion: <15} {errors[-1][0]:.3f} {errors[-1][1]:.3f}')
-
