@@ -7,6 +7,9 @@ python3 decissiontreecar.py
 To run the Decision Tree on bank dataset -unknown as feature value:
 python3 DecisionTree_bank.py
 
+#Packages
+Scripts depend upon numpy, pandas, scikitlearn and matplotlib
+
 To run the Decision Tree on bank dataset -unknown as missing:
 python3 DecisionTree_bank_missing.py
 # Depth
