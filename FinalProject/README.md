@@ -7,7 +7,7 @@ python3 incomePredictionDecissionTree.py
 To run the Random Forest on Income Dataset
 python3 incomePredictionRandomForest.py
 
-#Packages
+# Packages
 Scripts depend upon numpy, pandas, scikitlearn and matplotlib
 
 
