@@ -16,12 +16,11 @@ max_epochs = 100
 # Hyperparameter C values
 C_values = [100/873, 500/873, 700/873]
 
-# Learning rate schedule parameters
+# Initial learning rate
 gamma0 = 0.1
-a = 0.01
 
 # SVM with stochastic sub-gradient descent
-def svm_sgd(X, y, C, gamma0, a, max_epochs):
+def svm_sgd(X, y, C, gamma0, max_epochs):
     n, d = X.shape
     w = np.zeros(d)  # Initialize weights to zeros
     b = 0  # Initialize bias to zero
@@ -32,7 +31,7 @@ def svm_sgd(X, y, C, gamma0, a, max_epochs):
         
         for i in range(n):
             updates += 1
-            eta = gamma0 / (1 + (gamma0 / a )* updates)
+            eta = gamma0 / (1 + updates)
             margin = y[i] * (np.dot(X[i], w) + b)
             
             if margin < 1:
@@ -48,7 +47,7 @@ for C in C_values:
     X_train, y_train = train_data.iloc[:, :-1].values, train_data.iloc[:, -1].values
     X_test, y_test = test_data.iloc[:, :-1].values, test_data.iloc[:, -1].values
     
-    w, b = svm_sgd(X_train, y_train, C, gamma0, a, max_epochs)
+    w, b = svm_sgd(X_train, y_train, C, gamma0, max_epochs)
     
     # Calculate training error
     train_predictions = np.sign(np.dot(X_train, w) + b)
