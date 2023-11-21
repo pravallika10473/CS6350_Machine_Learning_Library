@@ -7,8 +7,8 @@ train_data = pd.read_csv("dataset/bank-note/train.csv", header=None)
 test_data = pd.read_csv("dataset/bank-note/test.csv", header=None)
 
 # Convert labels to {1, -1}
-train_data.iloc[:, -1] = train_data.iloc[:, -1].apply(lambda x: 1 if x == 1 else -1)
-test_data.iloc[:, -1] = test_data.iloc[:, -1].apply(lambda x: 1 if x == 1 else -1)
+train_data.iloc[:, -1] = train_data.iloc[:, -1].map({1: 1, 0: -1})
+test_data.iloc[:, -1] = test_data.iloc[:, -1].map({1: 1, 0: -1})
 
 # Set the maximum epochs T to 100
 max_epochs = 100
