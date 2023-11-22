@@ -8,18 +8,8 @@ train_data = pd.read_csv("dataset/bank-note/train.csv", header=None)
 test_data = pd.read_csv("dataset/bank-note/test.csv", header=None)
 
 # Convert labels to {1, -1}
-train_data.iloc[:, -1] = train_data.iloc[:, -1].apply(lambda x: 1 if x == 1 else -1)
-test_data.iloc[:, -1] = test_data.iloc[:, -1].apply(lambda x: 1 if x == 1 else -1)
-
-# Set the maximum epochs T to 100
-max_epochs = 100
-
-# Hyperparameter C values
-C_values = [100/873, 500/873, 700/873]
-
-# Learning rate schedule parameters
-gamma0 = 0.1
-a = 0.01
+train_data.iloc[:, -1] = train_data.iloc[:, -1].map({1: 1, 0: -1})
+test_data.iloc[:, -1] = test_data.iloc[:, -1].map({1: 1, 0: -1})
 
 # SVM with stochastic sub-gradient descent
 def svm_sgd(X, y, C, gamma0, a, max_epochs):
@@ -41,76 +31,105 @@ def svm_sgd(X, y, C, gamma0, a, max_epochs):
                 b = b + eta * C * y[i]
             else:
                 w = (1 - eta) * w
-                
-    return w, b
-
-# Dual SVM with scipy.optimize.minimize
-def dual_svm(X, y, C):
-    n, d = X.shape
-    alpha_0 = np.zeros(n)
     
-    # Define the objective function for minimization
-    def objective(alpha):
-        return 0.5 * np.dot(alpha, alpha) - np.sum(alpha)
-
-    # Define the equality constraint
-    def constraint(alpha):
-        return np.dot(alpha, y)
-
-    # Set bounds for alpha (0 <= alpha <= C)
-    bounds = [(0, C) for _ in range(n)]
-
-    # Define the optimization problem
-    cons = [{'type': 'eq', 'fun': constraint}]
-    result = minimize(objective, alpha_0, method='SLSQP', bounds=bounds, constraints=cons)
-
-    # Extract alpha values from the result
-    alpha = result.x
-
-    # Calculate weights and bias
-    w = np.dot(alpha * y, X)
-    b = np.mean(y - np.dot(X, w))
-
     return w, b
 
-# Training and testing for different hyperparameter settings
+# SVM in the dual domain
+def dual_objective(alpha, X, y, C):
+    n, d = X.shape
+    w = np.dot(alpha * y, X)
+    hinge_loss = np.maximum(1 - np.dot(X, w), 0)
+    regularization_term = 0.5 * np.dot(w, w)
+    
+    dual_objective_value = C * np.sum(hinge_loss) + regularization_term
+    
+    return dual_objective_value
+
+# Initialize variables for dual SVM
+alpha_init = np.zeros(len(train_data))
+# Hyperparameter C values for primal SVM
+C_values = [100/873, 500/873, 700/873]
+
+primal_results = []
+dual_results = []
 for C in C_values:
     X_train, y_train = train_data.iloc[:, :-1].values, train_data.iloc[:, -1].values
-    X_test, y_test = test_data.iloc[:, :-1].values, test_data.iloc[:, -1].values
     
-    # Primal SVM (stochastic sub-gradient descent)
-    w_primal, b_primal = svm_sgd(X_train, y_train, C, gamma0, a, max_epochs)
+    # Training and testing for different hyperparameter settings using primal SVM
+    w_primal, b_primal = svm_sgd(X_train, y_train, C, gamma0=0.1, a=0.01, max_epochs=100)
     
-    # Dual SVM
-    w_dual, b_dual = dual_svm(X_train, y_train, C)
-    
-    # Calculate training and test errors for primal SVM
+    # Calculate training error for primal SVM
     train_predictions_primal = np.sign(np.dot(X_train, w_primal) + b_primal)
-    test_predictions_primal = np.sign(np.dot(X_test, w_primal) + b_primal)
-    
     train_error_primal = np.mean(train_predictions_primal != y_train)
-    test_error_primal = np.mean(test_predictions_primal != y_test)
     
-    # Calculate training and test errors for dual SVM
+    # Calculate test error for primal SVM
+    test_predictions_primal = np.sign(np.dot(test_data.iloc[:, :-1].values, w_primal) + b_primal)
+    test_error_primal = np.mean(test_predictions_primal != test_data.iloc[:, -1].values)
+    
+    primal_results.append({
+        'C': C,
+        'w': w_primal,
+        'b': b_primal,
+        'train_error': train_error_primal,
+        'test_error': test_error_primal
+    })
+
+    # Optimize the dual objective function using scipy.optimize.minimize
+    result = minimize(dual_objective, alpha_init, args=(X_train, y_train, C), bounds=[(0, C) for _ in range(len(X_train))])
+    alpha_optimal = result.x
+    
+    # Recover feature weights and bias for dual SVM
+    w_dual = np.dot(alpha_optimal * y_train, X_train)
+    b_dual = y_train - np.dot(X_train, w_dual)
+    b_dual = np.mean(b_dual)
+    
+    # Calculate training error for dual SVM
     train_predictions_dual = np.sign(np.dot(X_train, w_dual) + b_dual)
-    test_predictions_dual = np.sign(np.dot(X_test, w_dual) + b_dual)
-    
     train_error_dual = np.mean(train_predictions_dual != y_train)
-    test_error_dual = np.mean(test_predictions_dual != y_test)
     
+    # Calculate test error for dual SVM
+    test_predictions_dual = np.sign(np.dot(test_data.iloc[:, :-1].values, w_dual) + b_dual)
+    test_error_dual = np.mean(test_predictions_dual != test_data.iloc[:, -1].values)
+    
+    dual_results.append({
+        'C': C,
+        'w': w_dual,
+        'b': b_dual,
+        'train_error': train_error_dual,
+        'test_error': test_error_dual
+    })
+
+# Compare results between primal and dual SVM
+for res_primal, res_dual in zip(primal_results, dual_results):
+    C = res_primal['C']
+    w_primal, b_primal = res_primal['w'], res_primal['b']
+    w_dual, b_dual = res_dual['w'], res_dual['b']
+
+    # Compare feature weights and bias
+    weight_difference = np.linalg.norm(w_primal - w_dual)
+    bias_difference = np.abs(b_primal - b_dual)
+
+    # Compare training and test errors
+    train_error_difference = np.abs(res_primal['train_error'] - res_dual['train_error'])
+    test_error_difference = np.abs(res_primal['test_error'] - res_dual['test_error'])
+
     # Print results
     print(f"C: {C}")
     print("Primal SVM:")
-    print(f"Training Error: {train_error_primal}, Test Error: {test_error_primal}")
-    
+    print("  w_primal:", w_primal)
+    print("  b_primal:", b_primal)
+    print("  Train Error: ", res_primal['train_error'])
+    print("  Test Error: ", res_primal['test_error'])
+
     print("Dual SVM:")
-    print(f"Training Error: {train_error_dual}, Test Error: {test_error_dual}")
-    
-    # Print differences between primal and dual parameters
-    w_diff = np.linalg.norm(w_primal - w_dual)
-    b_diff = np.abs(b_primal - b_dual)
-    
-    print(f"Weights Difference between Primal and Dual: {w_diff}")
-    print(f"Bias Difference between Primal and Dual: {b_diff}")
-    
+    print("  w_dual:", w_dual)
+    print("  b_dual:", b_dual)
+    print("  Train Error: ", res_dual['train_error'])
+    print("  Test Error: ", res_dual['test_error'])
+
+    print("Differences:")
+    print("  Feature Weights Difference:", weight_difference)
+    print("  Bias Difference:", bias_difference)
+    print("  Train Error Difference:", train_error_difference)
+    print("  Test Error Difference:", test_error_difference)
     print("="*30)
