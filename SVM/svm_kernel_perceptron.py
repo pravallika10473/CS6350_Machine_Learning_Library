@@ -142,4 +142,3 @@ for C in C_values:
         test_error = np.mean(y_test_pred != y_test_np)
 
         print(f"Gamma: {gamma}, C: {C}, Train Error: {train_error:.5f}, Test Error: {test_error:.5f}")
-
