@@ -91,11 +91,11 @@ X_train = scaler.fit_transform(X_train)
 X_test = scaler.transform(X_test)
 
 # Example usage:
-hidden1_size = 3
-hidden2_size = 3
+hidden1_size = 4
+hidden2_size = 4
 output_size = 1
-learning_rate = 0.1
-epochs = 1000
+learning_rate = 0.001
+epochs = 100
 
 # Train the neural network
 trained_weights = train_neural_network(X_train, y_train, hidden1_size, hidden2_size, output_size, learning_rate, epochs)
