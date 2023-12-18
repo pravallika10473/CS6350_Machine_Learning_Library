@@ -4,8 +4,8 @@ import numpy as np
 from sklearn.metrics import roc_auc_score
 
 # Load the training and test datasets
-train_file = "datasets/train_final.csv"
-test_file = "datasets/test_final.csv"
+train_file = "dataset/train_final.csv"
+test_file = "dataset/test_final.csv"
 train_data = pd.read_csv(train_file)
 test_data = pd.read_csv(test_file)
 
@@ -33,19 +33,19 @@ for col in categorical_columns:
     test_data[col] = test_data[col].fillna(test_data[col].mode()[0])
 
 # Save the cleaned data
-train_data.to_csv("datasets/train_final_cleaned.csv", index=False)
-test_data.to_csv("datasets/test_final_cleaned.csv", index=False)
+train_data.to_csv("dataset/train_final_cleaned.csv", index=False)
+test_data.to_csv("dataset/test_final_cleaned.csv", index=False)
 
 # Apply one-hot encoding to categorical columns
 train_data = pd.get_dummies(train_data, columns=categorical_columns)
 test_data = pd.get_dummies(test_data, columns=categorical_columns)
 
 # Save the cleaned and one-hot encoded data
-train_data.to_csv("datasets/train_final_encoded.csv", index=False)
-test_data.to_csv("datasets/test_final_encoded.csv", index=False)
+train_data.to_csv("dataset/train_final_encoded.csv", index=False)
+test_data.to_csv("dataset/test_final_encoded.csv", index=False)
 
 # Load the cleaned and encoded training data
-train_data = pd.read_csv("datasets/train_final_encoded.csv")
+train_data = pd.read_csv("dataset/train_final_encoded.csv")
 
 # Split the training data into features and labels
 X_train = train_data.drop('income>50K', axis=1)
@@ -59,7 +59,7 @@ random_forest.fit(X_train, y_train)
 missing_categorical_columns = set(categorical_columns) - set(X_train.columns)
 
 # Load the cleaned and encoded test data
-test_data = pd.read_csv("datasets/test_final_encoded.csv")
+test_data = pd.read_csv("dataset/test_final_encoded.csv")
 
 # Create empty columns for missing categorical features in the test data
 for col in missing_categorical_columns:
@@ -82,4 +82,4 @@ test_ids = range(1, len(test_data) + 1)
 predictions_df = pd.DataFrame({'ID': test_ids, 'Prediction': predictions[:, 1]})
 
 # Save the predictions in the desired format
-predictions_df.to_csv("randomForestPredictions.csv", index=False)
+predictions_df.to_csv("output/randomForestPredictions.csv", index=False)
